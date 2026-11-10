@@ -436,7 +436,7 @@ DESKTOP
     <path>/userdata/roms/switch2</path>
     <extension>.s2 .S2 .nsp .NSP .nsz .NSZ .nup .NUP .xci .XCI .xcz .XCZ .nca .NCA .nro .NRO .nso .NSO .kip .KIP</extension>
     <command>$BASE/launch.sh "%EMULATOR%" "%CORE%" "%ROM_RAW%"</command>
-    <platform>ignore</platform>
+    <platform>switch</platform>
     <theme>switch2</theme>
     <emulators>
 $emus    </emulators>
@@ -508,8 +508,11 @@ fi
 
 FRESH=1
 [[ -f "$STATE" ]] && FRESH=0
+# EmulationStation reads the system files only at start: a reboot is offered
+# whenever they change (new emulator, new menu entries)
+es_sum() { cat "$ES_CFG" "$ES_FEAT" 2>/dev/null | md5sum | cut -d' ' -f1; }
+ES_SUM_BEFORE="$(es_sum)"
 NEED_RESTART=0
-[[ -f "$ES_FEAT" ]] || NEED_RESTART=1
 
 # --- latest builds on GitHub -------------------------------------------------
 echo "Checking for the latest builds..."
@@ -607,12 +610,13 @@ if (( ${#TODO[@]} == 0 )); then
     setup_shared
     write_helpers
     write_system
+    [[ "$(es_sum)" == "$ES_SUM_BEFORE" ]] || NEED_RESTART=1
     mkdir -p "$SELF_DIR/images"
     extract_payload POSTER "$SELF_DIR/images/$SELF_STEM.jpg"
     update_gamelist >> "$LOG" 2>&1
     rm -rf "$TMP"
     if (( NEED_RESTART == 1 )); then
-        echo "The emulator choice per game (advanced game options) was added."
+        echo "The Switch 2 system was changed (emulators / advanced game options)."
         echo "Batocera needs one reboot to show it."
         echo
         reboot_flow
@@ -693,6 +697,7 @@ rm -rf "$TMP"
 
 write_helpers
 write_system
+[[ "$(es_sum)" == "$ES_SUM_BEFORE" ]] || NEED_RESTART=1
 echo "$ALLIN_VERSION" > "$STATE"
 mkdir -p "$SELF_DIR/images"
 extract_payload POSTER "$SELF_DIR/images/$SELF_STEM.jpg"
@@ -735,7 +740,7 @@ if (( FRESH == 0 )); then
     echo "Update complete"
     echo
     if (( NEED_RESTART == 1 )); then
-        echo "The emulator choice per game (advanced game options) was added."
+        echo "The Switch 2 system was changed (emulators / advanced game options)."
         echo "Batocera needs one reboot to show it."
         echo
         reboot_flow
