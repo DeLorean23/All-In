@@ -41,6 +41,7 @@ BIOS_DIR="/userdata/bios/switch2"
 KEYS_DIR="$BIOS_DIR/keys"
 FW_DIR="$BIOS_DIR/firmware"
 ES_CFG="/userdata/system/configs/emulationstation/es_systems_switch2.cfg"
+ES_FEAT="/userdata/system/configs/emulationstation/es_features_switch2.cfg"
 APPDIR="/userdata/system/.local/share/applications"
 OLD_EGL="/userdata/system/eglantine"      # folder of the old Eglantine Installer & Updater
 LOG_DIR="/userdata/system/logs"
@@ -352,7 +353,16 @@ fi
 cd "$BASE/data/$EMU" || exit 1     # "user" folder here = portable data folder
 { echo "===== $(date) ====="; echo "Game: $ROM"; echo "Emulator: $EMU ($(head -n1 "$BASE/emus/$EMU/version.txt" 2>/dev/null))"; } >> "$LOG"
 
-setsid "$BASE/emus/$EMU/AppRun" -f -g "$MAIN" >> "$LOG" 2>&1 &
+# option "FULLSCREEN" from the advanced game options (game, then system)
+FS=""
+NAME="$(basename "$ROM")"
+for key in "switch2[\"$NAME\"].switch2_fullscreen" "switch2.switch2_fullscreen"; do
+    v="$(grep -F -- "$key=" "$CONF" 2>/dev/null | tail -n1 | cut -d= -f2- | tr -d '\r')"
+    if [[ -n "$v" ]]; then FS="$v"; break; fi
+done
+ARGS=(-g "$MAIN")
+[[ "$FS" == "0" ]] || ARGS=(-f "${ARGS[@]}")
+setsid "$BASE/emus/$EMU/AppRun" "${ARGS[@]}" >> "$LOG" 2>&1 &
 PID=$!
 python3 "$BASE/hotkey.py" "$PID" >> "$LOG" 2>&1 &
 HK=$!
@@ -378,7 +388,7 @@ SH
 
 # System "Switch 2" with every installed emulator, and the F1 entries
 write_system() {
-    local e id name first=1 emus=""
+    local e id name first=1 emus="" feats=""
     for e in "${EMUS[@]}"; do
         id="${e%%|*}"
         name="$(cut -d'|' -f2 <<< "$e")"
@@ -391,6 +401,14 @@ write_system() {
           <core$def>$id</core>
         </cores>
       </emulator>
+"
+            # options in "advanced game options" (needed so EmulationStation shows the menu)
+            feats+="  <emulator name=\"$id\" features=\"padtokeyboard\">
+    <feature name=\"FULLSCREEN\" group=\"SWITCH 2 OPTIONS\" value=\"switch2_fullscreen\" description=\"Start the game in fullscreen (default: on)\">
+      <choice name=\"On\" value=\"1\" />
+      <choice name=\"Off\" value=\"0\" />
+    </feature>
+  </emulator>
 "
             # F1 entry
             cat > "$APPDIR/switch2-$id.desktop" <<DESKTOP
@@ -425,6 +443,49 @@ $emus    </emulators>
   </system>
 </systemList>
 XML
+    cat > "$ES_FEAT" <<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<features>
+$feats</features>
+XML
+}
+
+# Asks for the reboot and does it (EmulationStation reads new systems/options only at start)
+reboot_flow() {
+if ! ask_yes_no "Reboot now?"; then
+    update_gamelist >> "$LOG" 2>&1
+    echo
+    echo "No reboot. The changes for \"Switch 2\" appear after the next reboot."
+    echo
+    wait_key
+    exit 0
+fi
+
+# Reboot: stop EmulationStation first so it can't overwrite the Ports gamelist.
+# Runs detached, because stopping EmulationStation also closes this window.
+echo "Rebooting..."
+declare -f update_gamelist > /tmp/allin-gamelist.sh
+FINISH="/tmp/allin-finish.sh"
+cat > "$FINISH" <<SH
+#!/bin/bash
+LOG="$LOG"
+sleep 1
+if [[ -x /etc/init.d/S31emulationstation ]]; then
+    /etc/init.d/S31emulationstation stop >> "\$LOG" 2>&1
+else
+    killall -TERM emulationstation >> "\$LOG" 2>&1
+fi
+for i in \$(seq 1 30); do pgrep -x emulationstation >/dev/null || break; sleep 1; done
+SELF_DIR="$SELF_DIR"; SELF_NAME="$SELF_NAME"; SELF_STEM="$SELF_STEM"
+source /tmp/allin-gamelist.sh
+update_gamelist >> "\$LOG" 2>&1
+sync
+reboot
+SH
+chmod +x "$FINISH"
+setsid nohup /bin/bash "$FINISH" >/dev/null 2>&1 < /dev/null &
+sleep 1
+exit 0
 }
 
 # ---------------------------------------------------------------------------
@@ -447,6 +508,8 @@ fi
 
 FRESH=1
 [[ -f "$STATE" ]] && FRESH=0
+NEED_RESTART=0
+[[ -f "$ES_FEAT" ]] || NEED_RESTART=1
 
 # --- latest builds on GitHub -------------------------------------------------
 echo "Checking for the latest builds..."
@@ -548,6 +611,12 @@ if (( ${#TODO[@]} == 0 )); then
     extract_payload POSTER "$SELF_DIR/images/$SELF_STEM.jpg"
     update_gamelist >> "$LOG" 2>&1
     rm -rf "$TMP"
+    if (( NEED_RESTART == 1 )); then
+        echo "The emulator choice per game (advanced game options) was added."
+        echo "Batocera needs one reboot to show it."
+        echo
+        reboot_flow
+    fi
     wait_key
     exit 0
 fi
@@ -663,49 +732,23 @@ fi
 
 if (( FRESH == 0 )); then
     update_gamelist >> "$LOG" 2>&1
-    curl -s http://127.0.0.1:1234/reloadgames >/dev/null 2>&1
     echo "Update complete"
     echo
+    if (( NEED_RESTART == 1 )); then
+        echo "The emulator choice per game (advanced game options) was added."
+        echo "Batocera needs one reboot to show it."
+        echo
+        reboot_flow
+    fi
+    curl -s http://127.0.0.1:1234/reloadgames >/dev/null 2>&1
     wait_key
     exit 0
 fi
 
 echo "Installation complete"
 echo
-if ! ask_yes_no "Reboot now?"; then
-    update_gamelist >> "$LOG" 2>&1
-    echo
-    echo "No reboot. The system \"Switch 2\" appears after the next reboot."
-    echo
-    wait_key
-    exit 0
-fi
+reboot_flow
 
-# Reboot: stop EmulationStation first so it can't overwrite the Ports gamelist.
-# Runs detached, because stopping EmulationStation also closes this window.
-echo "Rebooting..."
-declare -f update_gamelist > /tmp/allin-gamelist.sh
-FINISH="/tmp/allin-finish.sh"
-cat > "$FINISH" <<SH
-#!/bin/bash
-LOG="$LOG"
-sleep 1
-if [[ -x /etc/init.d/S31emulationstation ]]; then
-    /etc/init.d/S31emulationstation stop >> "\$LOG" 2>&1
-else
-    killall -TERM emulationstation >> "\$LOG" 2>&1
-fi
-for i in \$(seq 1 30); do pgrep -x emulationstation >/dev/null || break; sleep 1; done
-SELF_DIR="$SELF_DIR"; SELF_NAME="$SELF_NAME"; SELF_STEM="$SELF_STEM"
-source /tmp/allin-gamelist.sh
-update_gamelist >> "\$LOG" 2>&1
-sync
-reboot
-SH
-chmod +x "$FINISH"
-setsid nohup /bin/bash "$FINISH" >/dev/null 2>&1 < /dev/null &
-sleep 1
-exit 0
 
 __POSTER_BEGIN__
 @@POSTER@@

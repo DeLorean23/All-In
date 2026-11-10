@@ -47,6 +47,8 @@ Der Installer lädt immer das neueste Linux-x86_64-AppImage jedes Emulators aus 
 - **Für ein Spiel:** in der Spieleliste die Taste auf dem Spiel gedrückt halten → Spieloptionen → **Erweiterte Spieleinstellungen → Emulator** → einen auswählen (z. B. `lichii-pgo`).
 - **Für alle Spiele:** in den Systemeinstellungen von **Switch 2** einen anderen Emulator als Standard für das System wählen.
 
+Im selben Menü kannst du unter **Switch 2 options → FULLSCREEN** ein einzelnes Spiel im Fenster starten (Standard: Vollbild).
+
 Namen der Emulatoren im Menü: `eglantine`, `eglantine-pgo`, `lichii`, `lichii-pgo`, `orchid`, `orchid-pgo`, `fritchii`, `fritchii-pgo` (es stehen nur die installierten drin).
 
 ## Ordner

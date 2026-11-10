@@ -47,6 +47,8 @@ Get **All-In Installer & Update.zip** from the **[Releases](https://github.com/D
 - **For one game:** hold the button on the game in the game list → game options → **advanced game options → emulator** → pick one (for example `lichii-pgo`).
 - **For all games:** in the system settings of **Switch 2** choose another emulator as the default for the system.
 
+In the same menu, **Switch 2 options → FULLSCREEN** lets you start a single game in a window (default: fullscreen).
+
 Emulator names in the menu: `eglantine`, `eglantine-pgo`, `lichii`, `lichii-pgo`, `orchid`, `orchid-pgo`, `fritchii`, `fritchii-pgo` (only the installed ones are listed).
 
 ## Folders
