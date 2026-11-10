@@ -488,7 +488,9 @@ for e in emus:
     except Exception:
         rels = []
     if isinstance(rels, list):
-        rels = [r for r in rels if isinstance(r, dict) and not r.get("draft")]
+        # skip drafts and test builds of single branches ("branch-...")
+        rels = [r for r in rels if isinstance(r, dict) and not r.get("draft")
+                and not str(r.get("tag_name", "")).startswith("branch-")]
         rels.sort(key=lambda r: r.get("published_at") or "", reverse=True)
         done = False
         for r in rels:
