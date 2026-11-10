@@ -15,7 +15,7 @@
 | **Eglantine** (Standard) | normal + PGO | https://github.com/Djihads80/Eglantine |
 | **Lichii** | normal + PGO | https://github.com/zortos293/Lichii |
 | **Orchid** | normal + PGO | https://github.com/MythosOfs/Orchid |
-| **Fritchii** | normal + PGO | https://github.com/Frizti/Fritchii |
+| **Fritchii** (Linux-Build) | normal | https://github.com/xTopher1049/Fritchii-linux (Linux-Build von https://github.com/Frizti/Fritchii) |
 
 Der Installer lädt immer das neueste Linux-x86_64-AppImage jedes Emulators aus dessen GitHub-Releases. Hat ein Projekt (noch) keinen Linux-Build, wird es übersprungen und als „no Linux build available“ angezeigt. Sobald es einen Build gibt, kommt der Emulator beim nächsten Lauf automatisch dazu.
 
@@ -49,7 +49,7 @@ Der Installer lädt immer das neueste Linux-x86_64-AppImage jedes Emulators aus 
 
 Im selben Menü kannst du unter **Switch 2 options → FULLSCREEN** ein einzelnes Spiel im Fenster starten (Standard: Vollbild).
 
-Namen der Emulatoren im Menü: `eglantine`, `eglantine-pgo`, `lichii`, `lichii-pgo`, `orchid`, `orchid-pgo`, `fritchii`, `fritchii-pgo` (es stehen nur die installierten drin).
+Namen der Emulatoren im Menü: `eglantine`, `eglantine-pgo`, `lichii`, `lichii-pgo`, `orchid`, `orchid-pgo`, `fritchii` (es stehen nur die installierten drin).
 
 ## Ordner
 
@@ -77,6 +77,7 @@ Alle Emulatoren nutzen **dieselbe Firmware, dieselben Keys und dieselben Spielst
 
 ## Controller
 
+- **Controller gehen sofort, ohne Tastatur-Einstellung:** Vor jedem Start (Spiel oder F1-Eintrag) werden die angeschlossenen Controller in die Einstellungen des gewählten Emulators geschrieben: Controller 1 = Spieler 1, Controller 2 = Spieler 2, … bis 8. Tasten nach Position wie bei der Switch (auch Xbox-/PlayStation-Controller), mit Sticks, Triggern, Bewegungssteuerung und Vibration. Das passiert bei jedem Start, passt also immer, auch nach einem Controller-Wechsel. Eigene Änderungen an der Controller-Belegung im Emulator werden beim nächsten Start ersetzt.
 - **Hotkey + Start** (Select + Start oder Guide + Start) beendet das Spiel.
 - Pop-up-Fenster vor dem Spielstart (z. B. „Empfohlene Einstellungen verwenden?“) gehen mit dem Controller: Steuerkreuz zum Auswählen, **A** = bestätigen, **B** = abbrechen.
 

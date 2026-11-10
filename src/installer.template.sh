@@ -4,7 +4,7 @@
 #   Eglantine (normal + PGO)  https://github.com/Djihads80/Eglantine
 #   Lichii    (normal + PGO)  https://github.com/zortos293/Lichii
 #   Orchid    (normal + PGO)  https://github.com/MythosOfs/Orchid
-#   Fritchii  (normal + PGO)  https://github.com/Frizti/Fritchii
+#   Fritchii  (Linux build)   https://github.com/xTopher1049/Fritchii-linux
 # Every game can get its own emulator (hold the button on a game -> game options).
 # Running it again updates every emulator that has a newer build.
 # Created by DeLorean23
@@ -23,8 +23,7 @@ EMUS=(
     "lichii-pgo|Lichii PGO|zortos293/Lichii|pgo"
     "orchid|Orchid|MythosOfs/Orchid|normal"
     "orchid-pgo|Orchid PGO|MythosOfs/Orchid|pgo"
-    "fritchii|Fritchii|Frizti/Fritchii|normal"
-    "fritchii-pgo|Fritchii PGO|Frizti/Fritchii|pgo"
+    "fritchii|Fritchii|xTopher1049/Fritchii-linux|normal"
 )
 DEFAULT_EMU="eglantine"
 
@@ -304,6 +303,7 @@ write_helpers() {
     mkdir -p "$BASE"
     extract_payload HOTKEY "$BASE/hotkey.py"
     extract_payload DIALOGPAD "$BASE/dialogpad.py"
+    extract_payload AUTOPAD "$BASE/autopad.py"
 
     cat > "$BASE/launch.sh" <<'SH'
 #!/bin/bash
@@ -351,6 +351,8 @@ else
 fi
 
 cd "$BASE/data/$EMU" || exit 1     # "user" folder here = portable data folder
+# connected controllers -> players 1..8 of this emulator (every start)
+python3 "$BASE/autopad.py" "$EMU" >> "$LOG" 2>&1
 { echo "===== $(date) ====="; echo "Game: $ROM"; echo "Emulator: $EMU ($(head -n1 "$BASE/emus/$EMU/version.txt" 2>/dev/null))"; } >> "$LOG"
 
 # option "FULLSCREEN" from the advanced game options (game, then system)
@@ -381,6 +383,7 @@ SH
 BASE="/userdata/system/switch2"
 ID="${1:-eglantine}"
 cd "$BASE/data/$ID" || exit 1
+python3 "$BASE/autopad.py" "$ID" >> /userdata/system/logs/switch2.log 2>&1
 exec "$BASE/emus/$ID/AppRun"
 SH
     chmod +x "$BASE/launch.sh" "$BASE/app.sh"
@@ -538,7 +541,7 @@ import json, os, sys
 tmp, emus = sys.argv[1], sys.argv[2:]
 def ok_name(n, pgo):
     n = n.lower()
-    if not n.endswith(".appimage") or "linux" not in n:
+    if not n.endswith(".appimage"):
         return False
     if not any(a in n for a in ("x86_64", "x86-64", "amd64", "x64")):
         return False
@@ -764,3 +767,6 @@ __HOTKEY_END__
 __DIALOGPAD_BEGIN__
 @@DIALOGPAD@@
 __DIALOGPAD_END__
+__AUTOPAD_BEGIN__
+@@AUTOPAD@@
+__AUTOPAD_END__

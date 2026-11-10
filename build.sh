@@ -19,7 +19,8 @@ t = open(root + "/src/installer.template.sh").read()
 for key, val in {"@@VERSION@@": ver,
                  "@@POSTER@@": b64(root + "/assets/cover.jpg"),
                  "@@HOTKEY@@": b64(root + "/src/hotkey.py"),
-                 "@@DIALOGPAD@@": b64(root + "/src/dialogpad.py")}.items():
+                 "@@DIALOGPAD@@": b64(root + "/src/dialogpad.py"),
+                 "@@AUTOPAD@@": b64(root + "/src/autopad.py")}.items():
     assert key in t, key
     t = t.replace(key, val)
 assert "@@" not in t

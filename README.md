@@ -15,7 +15,7 @@
 | **Eglantine** (default) | normal + PGO | https://github.com/Djihads80/Eglantine |
 | **Lichii** | normal + PGO | https://github.com/zortos293/Lichii |
 | **Orchid** | normal + PGO | https://github.com/MythosOfs/Orchid |
-| **Fritchii** | normal + PGO | https://github.com/Frizti/Fritchii |
+| **Fritchii** (Linux build) | normal | https://github.com/xTopher1049/Fritchii-linux (Linux build of https://github.com/Frizti/Fritchii) |
 
 The installer always downloads the newest Linux x86_64 AppImage of each emulator from its GitHub releases. If a project has no Linux build (yet), it is skipped and shown as "no Linux build available"; it is added automatically on a later run as soon as a build exists.
 
@@ -49,7 +49,7 @@ Get **All-In Installer & Update.zip** from the **[Releases](https://github.com/D
 
 In the same menu, **Switch 2 options → FULLSCREEN** lets you start a single game in a window (default: fullscreen).
 
-Emulator names in the menu: `eglantine`, `eglantine-pgo`, `lichii`, `lichii-pgo`, `orchid`, `orchid-pgo`, `fritchii`, `fritchii-pgo` (only the installed ones are listed).
+Emulator names in the menu: `eglantine`, `eglantine-pgo`, `lichii`, `lichii-pgo`, `orchid`, `orchid-pgo`, `fritchii` (only the installed ones are listed).
 
 ## Folders
 
@@ -77,6 +77,7 @@ All emulators use the **same firmware, keys and saves**. Every emulator keeps **
 
 ## Controller
 
+- **Controllers work right away, no keyboard setup:** before every start (game or F1 entry) the connected controllers are written into the settings of the chosen emulator: controller 1 = player 1, controller 2 = player 2, ... up to 8. Buttons by position like on the Switch (Xbox/PlayStation pads too), sticks, triggers, motion and rumble included. This happens on every start, so it always fits, even after changing the controller. Manual changes of the controller settings inside an emulator are replaced on the next start.
 - **Hotkey + Start** (Select + Start or Guide + Start) closes the game.
 - Pop-up windows before a game starts (for example "Use the recommended settings?") can be answered with the controller: D-pad to choose, **A** = confirm, **B** = cancel.
 
