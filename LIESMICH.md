@@ -16,6 +16,8 @@
 | **Lichii** | normal + PGO | https://github.com/zortos293/Lichii |
 | **Orchid** | normal + PGO | https://github.com/MythosOfs/Orchid |
 | **Fritchii** (Linux-Build) | normal | https://github.com/xTopher1049/Fritchii-linux (Linux-Build von https://github.com/Frizti/Fritchii) |
+| **Hortensia** | normal | https://github.com/justr4mzi/hortensia (fasst Lichii, Eglantine, Orchid, Selevet, SmileyTatsu, Fritchii u. a. in einem Build zusammen) |
+| **Eglantine SmileyTatsu** | normal + PGO | https://github.com/SmileyTatsu/Eglantine (Mario Kart World, AMD- und NVIDIA-Anpassungen) |
 
 Der Installer lädt immer das neueste Linux-x86_64-AppImage jedes Emulators aus dessen GitHub-Releases. Hat ein Projekt (noch) keinen Linux-Build, wird es übersprungen und als „no Linux build available“ angezeigt. Sobald es einen Build gibt, kommt der Emulator beim nächsten Lauf automatisch dazu.
 
@@ -49,7 +51,7 @@ Der Installer lädt immer das neueste Linux-x86_64-AppImage jedes Emulators aus 
 
 Im selben Menü kannst du unter **Switch 2 options → FULLSCREEN** ein einzelnes Spiel im Fenster starten (Standard: Vollbild).
 
-Namen der Emulatoren im Menü: `eglantine`, `eglantine-pgo`, `lichii`, `lichii-pgo`, `orchid`, `orchid-pgo`, `fritchii` (es stehen nur die installierten drin).
+Namen der Emulatoren im Menü: `eglantine`, `eglantine-pgo`, `lichii`, `lichii-pgo`, `orchid`, `orchid-pgo`, `fritchii`, `hortensia`, `smileytatsu`, `smileytatsu-pgo` (es stehen nur die installierten drin).
 
 ## Ordner
 

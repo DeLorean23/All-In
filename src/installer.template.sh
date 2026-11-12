@@ -5,6 +5,8 @@
 #   Lichii    (normal + PGO)  https://github.com/zortos293/Lichii
 #   Orchid    (normal + PGO)  https://github.com/MythosOfs/Orchid
 #   Fritchii  (Linux build)   https://github.com/xTopher1049/Fritchii-linux
+#   Hortensia                 https://github.com/justr4mzi/hortensia
+#   Eglantine SmileyTatsu (normal + PGO) https://github.com/SmileyTatsu/Eglantine
 # Every game can get its own emulator (hold the button on a game -> game options).
 # Running it again updates every emulator that has a newer build.
 # Created by DeLorean23
@@ -24,6 +26,9 @@ EMUS=(
     "orchid|Orchid|MythosOfs/Orchid|normal"
     "orchid-pgo|Orchid PGO|MythosOfs/Orchid|pgo"
     "fritchii|Fritchii|xTopher1049/Fritchii-linux|normal"
+    "hortensia|Hortensia|justr4mzi/hortensia|normal"
+    "smileytatsu|Eglantine SmileyTatsu|SmileyTatsu/Eglantine|normal"
+    "smileytatsu-pgo|Eglantine SmileyTatsu PGO|SmileyTatsu/Eglantine|pgo"
 )
 DEFAULT_EMU="eglantine"
 
@@ -543,9 +548,8 @@ def ok_name(n, pgo):
     n = n.lower()
     if not n.endswith(".appimage"):
         return False
-    if not any(a in n for a in ("x86_64", "x86-64", "amd64", "x64")):
-        return False
-    if any(a in n for a in ("aarch64", "arm64", "armhf")):
+    # no ARM builds; a file without any architecture in its name counts as x86_64
+    if any(a in n for a in ("aarch64", "arm64", "armhf", "-arm.", "-arm-", "_arm")):
         return False
     return ("pgo" in n) == pgo
 for e in emus:
@@ -579,7 +583,7 @@ PY
 # --- what needs to be done ----------------------------------------------------
 TODO=()
 echo
-printf ' %-15s %-34s %s\n' "Emulator" "Latest build" "Status"
+printf ' %-26s %-32s %s\n' "Emulator" "Latest build" "Status"
 echo " ----------------------------------------------------------------------"
 while IFS='|' read -r id tag title url size file; do
     [[ -n "$id" ]] || continue
@@ -588,7 +592,7 @@ while IFS='|' read -r id tag title url size file; do
     if [[ "$tag" == "NONE" ]]; then
         if installed "$id"; then st="installed ($cur), no new build found"
         else st="no Linux build available"; fi
-        printf ' %-15s %-34s %s\n' "$name" "-" "$st"
+        printf ' %-26s %-32s %s\n' "$name" "-" "$st"
         continue
     fi
     if ! installed "$id"; then
@@ -600,7 +604,7 @@ while IFS='|' read -r id tag title url size file; do
     else
         st="up to date"
     fi
-    printf ' %-15s %-34s %s\n' "$name" "${title:0:34}" "$st"
+    printf ' %-26s %-32s %s\n' "$name" "${title:0:32}" "$st"
 done <<< "$LATEST"
 echo
 

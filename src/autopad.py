@@ -10,6 +10,7 @@ import ctypes
 import glob
 import os
 import sys
+import time
 import configparser
 
 BASE = "/userdata/system/switch2"
@@ -37,48 +38,94 @@ class SDL_GUID(ctypes.Structure):
     _fields_ = [("data", ctypes.c_uint8 * 16)]
 
 
+# used when SDL knows a device only as joystick (no gamepad mapping): the same
+# fallback the emulators use (SDL gamepad button / axis numbers)
+FALLBACK = {"a": ("button", "0", ""), "b": ("button", "1", ""), "x": ("button", "2", ""),
+            "y": ("button", "3", ""), "back": ("button", "4", ""), "guide": ("button", "5", ""),
+            "start": ("button", "6", ""), "leftstick": ("button", "7", ""),
+            "rightstick": ("button", "8", ""), "leftshoulder": ("button", "9", ""),
+            "rightshoulder": ("button", "10", ""), "dpup": ("button", "11", ""),
+            "dpdown": ("button", "12", ""), "dpleft": ("button", "13", ""),
+            "dpright": ("button", "14", ""), "leftx": ("axis", "0", ""), "lefty": ("axis", "1", ""),
+            "rightx": ("axis", "2", ""), "righty": ("axis", "3", ""),
+            "lefttrigger": ("axis", "4", ""), "righttrigger": ("axis", "5", "")}
+
+
 def list_pads():
     lib = find_sdl()
     if not lib:
         log("no libSDL3 found, controllers not set")
         return []
+    log("SDL library: " + lib)
     # same SDL settings as the emulator (they change how controllers are found)
     for k, v in {"SDL_JOYSTICK_HIDAPI_XBOX": "0", "SDL_JOYSTICK_HIDAPI_SWITCH": "0",
                  "SDL_JOYSTICK_HIDAPI_JOY_CONS": "1", "SDL_JOYSTICK_HIDAPI_STEAM": "1",
                  "SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS": "1"}.items():
         os.environ.setdefault(k, v)
     sdl = ctypes.CDLL(lib)
+    U32P = ctypes.POINTER(ctypes.c_uint32)
     sdl.SDL_Init.argtypes = [ctypes.c_uint32]
     sdl.SDL_Init.restype = ctypes.c_bool
-    sdl.SDL_GetGamepads.argtypes = [ctypes.POINTER(ctypes.c_int)]
-    sdl.SDL_GetGamepads.restype = ctypes.POINTER(ctypes.c_uint32)
+    sdl.SDL_GetError.restype = ctypes.c_char_p
+    sdl.SDL_PumpEvents.restype = None
+    sdl.SDL_UpdateJoysticks.restype = None
+    sdl.SDL_GetJoysticks.argtypes = [ctypes.POINTER(ctypes.c_int)]
+    sdl.SDL_GetJoysticks.restype = U32P
+    sdl.SDL_IsGamepad.argtypes = [ctypes.c_uint32]
+    sdl.SDL_IsGamepad.restype = ctypes.c_bool
     sdl.SDL_GetJoystickGUIDForID.argtypes = [ctypes.c_uint32]
     sdl.SDL_GetJoystickGUIDForID.restype = SDL_GUID
-    sdl.SDL_GetGamepadNameForID.argtypes = [ctypes.c_uint32]
-    sdl.SDL_GetGamepadNameForID.restype = ctypes.c_char_p
+    sdl.SDL_GetJoystickNameForID.argtypes = [ctypes.c_uint32]
+    sdl.SDL_GetJoystickNameForID.restype = ctypes.c_char_p
     sdl.SDL_GetGamepadMappingForID.argtypes = [ctypes.c_uint32]
     sdl.SDL_GetGamepadMappingForID.restype = ctypes.c_void_p
     sdl.SDL_free.argtypes = [ctypes.c_void_p]
-    if not sdl.SDL_Init(0x00002000):          # SDL_INIT_GAMEPAD
-        log("SDL_Init failed")
+    if not sdl.SDL_Init(0x00002000 | 0x00000200):      # SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK
+        log("SDL_Init failed: " + (sdl.SDL_GetError() or b"").decode("utf-8", "ignore"))
         return []
+
+    def joysticks():
+        n = ctypes.c_int(0)
+        arr = sdl.SDL_GetJoysticks(ctypes.byref(n))
+        ids = [arr[i] for i in range(n.value)] if arr else []
+        if arr:
+            sdl.SDL_free(arr)
+        return ids
+
+    # SDL finds some controllers only after a moment (e.g. HIDAPI): ask for up to 3 s
+    ids, last, stable = [], None, 0
+    for _ in range(30):
+        sdl.SDL_PumpEvents()
+        sdl.SDL_UpdateJoysticks()
+        ids = joysticks()
+        if ids and ids == last:
+            stable += 1
+            if stable >= 3:
+                break
+        else:
+            stable = 0
+        last = ids
+        time.sleep(0.1)
+    log("SDL sees %d controller(s)" % len(ids))
+
     pads = []
-    count = ctypes.c_int(0)
-    ids = sdl.SDL_GetGamepads(ctypes.byref(count))
-    for i in range(count.value):
-        jid = ids[i]
+    for jid in ids:
         g = sdl.SDL_GetJoystickGUIDForID(jid)
         data = bytearray(g.data)
         data[2] = data[3] = 0                  # the emulator clears the name crc
         guid = data.hex()
-        name = (sdl.SDL_GetGamepadNameForID(jid) or b"").decode("utf-8", "ignore")
-        mp = sdl.SDL_GetGamepadMappingForID(jid)
-        mapping = ctypes.cast(mp, ctypes.c_char_p).value.decode("utf-8", "ignore") if mp else ""
-        if mp:
-            sdl.SDL_free(mp)
-        pads.append({"guid": guid, "name": name, "inputs": parse_mapping(mapping)})
-    if ids:
-        sdl.SDL_free(ids)
+        name = (sdl.SDL_GetJoystickNameForID(jid) or b"").decode("utf-8", "ignore")
+        inputs, kind = {}, "joystick (standard layout)"
+        if sdl.SDL_IsGamepad(jid):
+            mp = sdl.SDL_GetGamepadMappingForID(jid)
+            if mp:
+                inputs = parse_mapping(ctypes.cast(mp, ctypes.c_char_p).value.decode("utf-8", "ignore"))
+                sdl.SDL_free(mp)
+                kind = "gamepad"
+        if not inputs:
+            inputs = dict(FALLBACK)
+        log("  found: %s [%s] %s" % (name, guid, kind))
+        pads.append({"guid": guid, "name": name, "inputs": inputs})
     sdl.SDL_Quit()
     return pads
 
@@ -131,7 +178,7 @@ def button_param(inp, guid, port):
 def stick_param(inputs, xk, yk, guid, port):
     x = inputs.get(xk, ("axis", "0", ""))[1]
     y = inputs.get(yk, ("axis", "1", ""))[1]
-    return ("range:1.000000,deadzone:0.100000,invert_y:+,invert_x:+,offset_y:-0.000000,"
+    return ("range:1.000000,deadzone:0.150000,invert_y:+,invert_x:+,offset_y:0.000000,"
             "axis_y:{},offset_x:-0.000000,axis_x:{},guid:{},port:{},engine:sdl").format(y, x, guid, port)
 
 
