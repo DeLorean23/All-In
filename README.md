@@ -41,6 +41,7 @@ Get **All-In Installer & Update.zip** from the **[Releases](https://github.com/D
 3. The installer shows a table with every emulator, its newest build and what will be done.
 4. Confirm with **y** or **A** on your controller.
 5. Every emulator is downloaded and unpacked, one after the other, with a progress bar.
+   **The first installation takes a while:** especially Eglantine SmileyTatsu and Hortensia are big and their downloads are slow. Please be patient and don't close the window. Later updates only download emulators that have a newer build.
 6. At the end it asks "Reboot now?". Press **y / A** to restart Batocera. After the reboot the system **Switch 2** is in the system list.
 
 ## Choosing the emulator for a game

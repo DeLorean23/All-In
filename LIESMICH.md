@@ -41,6 +41,7 @@ Der Installer lädt immer das neueste Linux-x86_64-AppImage jedes Emulators aus 
 3. Der Installer zeigt eine Tabelle mit jedem Emulator, seinem neuesten Build und was gemacht wird.
 4. Mit **y** bzw. **A** am Controller bestätigen.
 5. Die Emulatoren werden nacheinander heruntergeladen und entpackt, mit Fortschrittsbalken.
+   **Die erste Installation dauert etwas:** Besonders Eglantine SmileyTatsu und Hortensia sind groß, und ihr Download ist langsam. Bitte Geduld haben und das Fenster nicht schließen. Spätere Updates laden nur Emulatoren, für die es einen neueren Build gibt.
 6. Am Ende fragt er „Reboot now?“. Mit **y / A** startet Batocera neu. Danach ist das System **Switch 2** in der Systemauswahl.
 
 ## Emulator für ein Spiel auswählen
