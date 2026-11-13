@@ -66,6 +66,8 @@ Emulator names in the menu: `eglantine`, `eglantine-pgo`, `lichii`, `lichii-pgo`
 
 All emulators use the **same firmware, keys and saves**. Every emulator keeps **its own settings**, so a setting in Lichii does not change Eglantine.
 
+When an emulator is set up for the first time the installer sets once: Vulkan, asynchronous shaders, shader cache, **region Europe, game language German**, no Wayland warning and, for Hortensia, the menu language English (no language question). After that the settings are never overwritten.
+
 **Note on the key files:** the keys are only important for **Switch 1** files (`.nsp`, `.xci`, ...). Switch 2 game folders (`name.s2`) do not need them.
 
 ### Game formats
@@ -79,9 +81,10 @@ All emulators use the **same firmware, keys and saves**. Every emulator keeps **
 
 ## Controller
 
-- **Controllers work right away, no keyboard setup:** before every start (game or F1 entry) the connected controllers are written into the settings of the chosen emulator: controller 1 = player 1, controller 2 = player 2, ... up to 8. Buttons by position like on the Switch (Xbox/PlayStation pads too), sticks, triggers, motion and rumble included. This happens on every start, so it always fits, even after changing the controller. Manual changes of the controller settings inside an emulator are replaced on the next start.
+- **Controller from the first start, nothing to switch:** already during the installation the connected controller is set in every emulator (controller 1 = player 1, ... up to 8), with the same default mapping the emulator uses itself when you switch the input from keyboard to the controller. The other emulators take over the settings of Eglantine.
+  - This happens only while an emulator is still on keyboard (also before a game start, if no controller was connected while installing). After that the mapping is never touched again, your own changes via F1 stay.
 - **Hotkey + Start** (Select + Start or Guide + Start) closes the game.
-- Pop-up windows before a game starts (for example "Use the recommended settings?") can be answered with the controller: D-pad to choose, **A** = confirm, **B** = cancel.
+- Pop-up windows before a game starts (for example "Use the recommended settings?") can be answered with the controller: D-pad to choose, **A** = confirm, **B** = cancel. For this the emulators start in X11 mode (when Batocera offers it).
 
 ## Update
 

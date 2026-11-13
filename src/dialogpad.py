@@ -17,6 +17,10 @@ import time
 PID = int(sys.argv[1]) if len(sys.argv) > 1 else 0
 
 
+def log(msg):
+    print("[dialogpad] " + msg, flush=True)
+
+
 def alive():
     if not PID:
         return True
@@ -118,7 +122,8 @@ def main():
     os.environ.setdefault("DISPLAY", ":0.0")
     try:
         from evdev import InputDevice, list_devices, UInput, ecodes as e
-    except Exception:
+    except Exception as ex:
+        log("python evdev missing, pop-up control off (%s)" % ex)
         return
     xs = None
     for _ in range(20):          # X may need a moment
@@ -128,6 +133,7 @@ def main():
         except Exception:
             time.sleep(0.5)
     if xs is None:
+        log("no X display, pop-up control off")
         return
 
     pads = {}
@@ -142,11 +148,14 @@ def main():
         except Exception:
             pass
     if not pads:
+        log("no controller found, pop-up control off")
         return
+    log("watching %d controller(s): %s" % (len(pads), ", ".join(d.name for d in pads.values())))
     try:
         ui = UInput({e.EV_KEY: [e.KEY_TAB, e.KEY_LEFTSHIFT, e.KEY_UP, e.KEY_DOWN,
                                 e.KEY_ENTER, e.KEY_ESC]}, name="Dialog Pad Keyboard")
-    except Exception:
+    except Exception as ex:
+        log("cannot create the virtual keyboard: %s" % ex)
         return
 
     def tap(key, shift=False):
@@ -159,7 +168,7 @@ def main():
         ui.syn()
 
     hat = {e.ABS_HAT0X: 0, e.ABS_HAT0Y: 0}
-    checked, active = 0.0, False
+    checked, active, was = 0.0, False, False
     while alive() and pads:
         r, _, _ = select.select(list(pads), [], [], 0.3)
         now = time.time()
@@ -168,6 +177,9 @@ def main():
                 active = xs.dialog_focused()
             except Exception:
                 active = False
+            if active != was:
+                log("pop-up window " + ("found: controller -> keys" if active else "closed"))
+                was = active
             checked = now
         for fd in r:
             try:

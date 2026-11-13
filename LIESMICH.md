@@ -66,6 +66,8 @@ Namen der Emulatoren im Menü: `eglantine`, `eglantine-pgo`, `lichii`, `lichii-p
 
 Alle Emulatoren nutzen **dieselbe Firmware, dieselben Keys und dieselben Spielstände**. Jeder Emulator behält aber **seine eigenen Einstellungen**, eine Einstellung in Lichii ändert also nichts an Eglantine.
 
+Beim ersten Anlegen setzt der Installer einmal: Vulkan, asynchrone Shader, Shader-Cache, **Region Europa, Spielsprache Deutsch**, keine Wayland-Warnung und bei Hortensia die Menüsprache English (ohne Sprachabfrage). Danach werden die Einstellungen nie wieder überschrieben.
+
 **Hinweis zu den Key-Dateien:** Die Keys sind nur für **Switch-1**-Dateien (`.nsp`, `.xci`, …) wichtig. Switch-2-Spielordner (`name.s2`) brauchen sie nicht.
 
 ### Spielformate
@@ -79,9 +81,10 @@ Alle Emulatoren nutzen **dieselbe Firmware, dieselben Keys und dieselben Spielst
 
 ## Controller
 
-- **Controller gehen sofort, ohne Tastatur-Einstellung:** Vor jedem Start (Spiel oder F1-Eintrag) werden die angeschlossenen Controller in die Einstellungen des gewählten Emulators geschrieben: Controller 1 = Spieler 1, Controller 2 = Spieler 2, … bis 8. Tasten nach Position wie bei der Switch (auch Xbox-/PlayStation-Controller), mit Sticks, Triggern, Bewegungssteuerung und Vibration. Das passiert bei jedem Start, passt also immer, auch nach einem Controller-Wechsel. Eigene Änderungen an der Controller-Belegung im Emulator werden beim nächsten Start ersetzt.
+- **Controller ab dem ersten Start, ohne Umstellen:** Schon bei der Installation wird der angeschlossene Controller in alle Emulatoren eingetragen (Controller 1 = Spieler 1, … bis 8), mit derselben Standardbelegung, die der Emulator selbst nimmt, wenn man von Tastatur auf Controller umstellt. Die anderen Emulatoren übernehmen dabei die Einstellung von Eglantine.
+  - Das passiert nur, solange ein Emulator noch auf Tastatur steht (auch vor einem Spielstart, falls beim Installieren kein Controller an war). Danach wird die Belegung nie mehr angefasst, eigene Änderungen über F1 bleiben.
 - **Hotkey + Start** (Select + Start oder Guide + Start) beendet das Spiel.
-- Pop-up-Fenster vor dem Spielstart (z. B. „Empfohlene Einstellungen verwenden?“) gehen mit dem Controller: Steuerkreuz zum Auswählen, **A** = bestätigen, **B** = abbrechen.
+- Pop-up-Fenster vor dem Spielstart (z. B. „Empfohlene Einstellungen verwenden?“) gehen mit dem Controller: Steuerkreuz zum Auswählen, **A** = bestätigen, **B** = abbrechen. Dafür starten die Emulatoren im X11-Modus (wenn Batocera ihn anbietet).
 
 ## Update
 

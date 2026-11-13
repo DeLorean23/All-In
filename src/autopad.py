@@ -1,10 +1,15 @@
 #!/usr/bin/python3
-# Writes the connected controllers into the settings of a Switch 2 emulator,
-# before every start, so the controller works right away (no keyboard default).
+# Sets the controller of a Switch 2 emulator ONCE, the first time it starts,
+# so the controller works right away (no keyboard default). After that the
+# controller settings are never touched again (your own changes stay).
 #   autopad.py <emulator id>
-# Uses the SDL3 library of the emulator itself, with the same settings the
-# emulator uses, so it finds the controllers exactly like the emulator does.
-# Controller 1 -> player 1, controller 2 -> player 2, ... (up to 8)
+# Runs in the installer and before every start; does something only while
+# player 1 is still on keyboard:
+# - Eglantine: the connected controllers are written (controller 1 -> player 1,
+#   ... up to 8), with the same default mapping the emulator uses itself
+#   when you switch the input from keyboard to the controller
+# - every other emulator: a copy of the controller settings of Eglantine,
+#   or the connected controllers if Eglantine has none yet
 # Created by DeLorean23
 import ctypes
 import glob
@@ -182,19 +187,47 @@ def stick_param(inputs, xk, yk, guid, port):
             "axis_y:{},offset_x:-0.000000,axis_x:{},guid:{},port:{},engine:sdl").format(y, x, guid, port)
 
 
-def main():
-    pads = list_pads()
-    if not pads:
-        log("no controller found, settings unchanged")
-        return
+TEMPLATES = ("eglantine", "eglantine-pgo")       # controller settings copied from here
+MARKER = os.path.join(BASE, "data", EMU, ".controller-set")
+
+
+def ini_of(emu):
+    return os.path.join(BASE, "data", emu, "user", "config", "qt-config.ini")
+
+
+def read_cfg(path):
     cfg = configparser.RawConfigParser(strict=False, interpolation=None, delimiters=("=",))
     cfg.optionxform = str
-    if os.path.exists(INI):
-        try:
-            cfg.read(INI, encoding="utf-8")
-        except Exception as e:
-            log("cannot read %s: %s" % (INI, e))
-            return
+    if os.path.exists(path):
+        cfg.read(path, encoding="utf-8")
+    return cfg
+
+
+def save_cfg(cfg, path):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        cfg.write(f, space_around_delimiters=False)
+    os.replace(tmp, path)
+
+
+def has_pad(cfg):
+    """player 1 is set to a controller (not keyboard / nothing)"""
+    if not cfg.has_option("Controls", "player_0_button_a"):
+        return False
+    v = cfg.get("Controls", "player_0_button_a")
+    return "engine:" in v and "engine:keyboard" not in v
+
+
+def done(msg):
+    log(msg)
+    try:
+        open(MARKER, "w").close()
+    except OSError:
+        pass
+
+
+def write_detected(cfg, pads):
     if not cfg.has_section("Controls"):
         cfg.add_section("Controls")
     c = "Controls"
@@ -224,17 +257,53 @@ def main():
         cfg.set(c, p + "vibration_enabled\\default", "true")
         cfg.set(c, p + "vibration_enabled", "true")
         log("player %d: %s (%s, port %d)" % (n + 1, pad["name"], guid, port))
-    # players without a controller: off
     for n in range(len(pads), MAX_PLAYERS):
         if n == 0:
             continue
         cfg.set(c, "player_%d_connected\\default" % n, "false")
         cfg.set(c, "player_%d_connected" % n, "false")
-    os.makedirs(os.path.dirname(INI), exist_ok=True)
-    tmp = INI + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        cfg.write(f, space_around_delimiters=False)
-    os.replace(tmp, INI)
+
+
+def main():
+    if os.path.exists(MARKER):
+        return                                        # set once already: never touch again
+    ini = ini_of(EMU)
+    try:
+        cfg = read_cfg(ini)
+    except Exception as e:
+        log("cannot read %s: %s" % (ini, e))
+        return
+    if has_pad(cfg):
+        done("%s: controller already set, kept" % EMU)
+        return
+    # copy of the controller settings of Eglantine
+    for src in TEMPLATES:
+        if src == EMU:
+            continue
+        try:
+            scfg = read_cfg(ini_of(src))
+        except Exception:
+            continue
+        if not has_pad(scfg):
+            continue
+        if not cfg.has_section("Controls"):
+            cfg.add_section("Controls")
+        n = 0
+        for k, v in scfg.items("Controls"):
+            if k.startswith("player_"):
+                cfg.set("Controls", k, v)
+                n += 1
+        save_cfg(cfg, ini)
+        done("%s: controller settings copied from %s (%d entries, once)" % (EMU, src, n))
+        return
+    # no template: write the connected controllers
+    pads = list_pads()
+    if not pads:
+        log("no controller found, settings unchanged (tried again on the next start)")
+        return
+    write_detected(cfg, pads)
+    save_cfg(cfg, ini)
+    done("%s: connected controller(s) set (once)" % EMU)
 
 
 if __name__ == "__main__":

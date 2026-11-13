@@ -270,6 +270,8 @@ setup_data() {  # setup_data <id>
     link_dir "$u/sdmc" "$SHARED/sdmc"
     link_dir "$u/dump" "$SHARED/dump"
     link_dir "$u/keys" "$KEYS_DIR"
+    # Default settings: only the first time, your own settings are never overwritten
+    # (Vulkan, shaders, region Europe + game language German, no Wayland warning)
     if [[ ! -f "$u/config/qt-config.ini" ]]; then
         cat > "$u/config/qt-config.ini" <<'INI'
 [Renderer]
@@ -279,7 +281,26 @@ use_asynchronous_shaders\default=false
 use_asynchronous_shaders=true
 use_disk_shader_cache\default=false
 use_disk_shader_cache=true
+
+[System]
+region_index\default=false
+region_index=2
+language_index\default=false
+language_index=3
+
+[UI]
+gui_hide_backend_warning\default=false
+gui_hide_backend_warning=true
 INI
+        # Hortensia asks for its menu language on the first start: English, no question
+        if [[ "$1" == "hortensia" ]]; then
+            cat >> "$u/config/qt-config.ini" <<'INI'
+firstStart\default=false
+firstStart=false
+Paths\language\default=false
+Paths\language=en
+INI
+        fi
     fi
 }
 
@@ -355,10 +376,15 @@ else
     echo "Game not found: $ROM" >> "$LOG"; exit 1
 fi
 
+# X11 mode when Batocera offers it: pop-up windows work with the controller
+# (dialogpad) and there is no Wayland warning
+export DISPLAY="${DISPLAY:-:0}"
+XN="${DISPLAY#*:}"; XN="${XN%%.*}"
+[[ -S "/tmp/.X11-unix/X$XN" ]] && export QT_QPA_PLATFORM=xcb
 cd "$BASE/data/$EMU" || exit 1     # "user" folder here = portable data folder
-# connected controllers -> players 1..8 of this emulator (every start)
+# controller: set once if not set yet (copy of Eglantine), then never touched
 python3 "$BASE/autopad.py" "$EMU" >> "$LOG" 2>&1
-{ echo "===== $(date) ====="; echo "Game: $ROM"; echo "Emulator: $EMU ($(head -n1 "$BASE/emus/$EMU/version.txt" 2>/dev/null))"; } >> "$LOG"
+{ echo "===== $(date) ====="; echo "Game: $ROM"; echo "Qt platform: ${QT_QPA_PLATFORM:-default}"; echo "Emulator: $EMU ($(head -n1 "$BASE/emus/$EMU/version.txt" 2>/dev/null))"; } >> "$LOG"
 
 # option "FULLSCREEN" from the advanced game options (game, then system)
 FS=""
@@ -387,11 +413,29 @@ SH
 #!/bin/bash
 BASE="/userdata/system/switch2"
 ID="${1:-eglantine}"
+# X11 mode when Batocera offers it: pop-up windows work with the controller
+# (dialogpad) and there is no Wayland warning
+export DISPLAY="${DISPLAY:-:0}"
+XN="${DISPLAY#*:}"; XN="${XN%%.*}"
+[[ -S "/tmp/.X11-unix/X$XN" ]] && export QT_QPA_PLATFORM=xcb
 cd "$BASE/data/$ID" || exit 1
 python3 "$BASE/autopad.py" "$ID" >> /userdata/system/logs/switch2.log 2>&1
 exec "$BASE/emus/$ID/AppRun"
 SH
     chmod +x "$BASE/launch.sh" "$BASE/app.sh"
+}
+
+# Controller for every installed emulator, set once (Eglantine first, the others
+# get a copy of it); never touched again afterwards
+setup_controllers() {
+    local e id
+    echo "Setting the controller (only where it is not set yet)..."
+    for e in "${EMUS[@]}"; do
+        id="${e%%|*}"
+        installed "$id" || continue
+        ( cd "$DATA_DIR/$id" && python3 "$BASE/autopad.py" "$id" ) 2>&1 | sed 's/^/  /'
+    done
+    echo
 }
 
 # System "Switch 2" with every installed emulator, and the F1 entries
@@ -617,6 +661,7 @@ if (( ${#TODO[@]} == 0 )); then
     setup_shared
     write_helpers
     write_system
+    setup_controllers
     [[ "$(es_sum)" == "$ES_SUM_BEFORE" ]] || NEED_RESTART=1
     mkdir -p "$SELF_DIR/images"
     extract_payload POSTER "$SELF_DIR/images/$SELF_STEM.jpg"
@@ -704,6 +749,7 @@ rm -rf "$TMP"
 
 write_helpers
 write_system
+setup_controllers
 [[ "$(es_sum)" == "$ES_SUM_BEFORE" ]] || NEED_RESTART=1
 echo "$ALLIN_VERSION" > "$STATE"
 mkdir -p "$SELF_DIR/images"
